@@ -37,55 +37,6 @@ function Exit-WithError {
     Exit 2
 }
 
-Function Get-Dependency {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string] $ModuleName,
-        [Parameter(Mandatory = $false)]
-        [int] $Level = 0
-    )
-
-    if ($Level -eq 0) {
-        $orderedModules = [System.Collections.ArrayList]@()
-    }
-
-    # Getting dependencies from the gallery
-    Write-Verbose "Checking dependencies for $ModuleName"
-    $moduleUri = "https://www.powershellgallery.com/api/v2/Search()?`$filter={1}&searchTerm=%27{0}%27&targetFramework=%27%27&includePrerelease=false&`$skip=0&`$top=40"
-    $currentModuleUrl = $moduleUri -f $ModuleName, 'IsLatestVersion'
-    $searchResult = Invoke-RestMethod -Method Get -Uri $currentModuleUrl -UseBasicParsing | Where-Object { $_.title.InnerText -eq $ModuleName }
-
-    if ($null -eq $searchResult) {
-        Write-Log "Skipping module '$ModuleName' because it cannot be found in PowerShell Gallery..."
-        Continue
-    }
-    
-    $moduleInformation = (Invoke-RestMethod -Method Get -UseBasicParsing -Uri $searchResult.id)
-
-    #Creating Variables to get an object
-    $moduleVersion = $moduleInformation.entry.properties.version
-    $dependencies = $moduleInformation.entry.properties.dependencies
-    $dependencyReadable = $dependencies -replace '\:.*', ''
-
-    $moduleObject = [PSCustomObject]@{
-        ModuleName    = $ModuleName
-        ModuleVersion = $ModuleVersion
-    }
-
-    # If no dependencies are found, the module is added to the list
-    if ([string]::IsNullOrEmpty($dependencies) ) {
-        $orderedModules.Add($moduleObject) | Out-Null
-    }
-
-    else {
-        # If there are dependencies, they are first checked for dependencies of there own. After that they are added to the list.
-        Get-Dependency -ModuleName $dependencyReadable -Level ($Level++)
-        $orderedModules.Add($moduleObject) | Out-Null
-    }
-
-    return $orderedModules
-}
-
 function Import-Module-Custom {
     param(
         [Parameter(Mandatory = $true)]
@@ -251,8 +202,21 @@ function Update-ExistingModule {
         [string] $AutomationAccountName,
 
         [Parameter(Mandatory = $true)]
-        [string] $ModuleName
+        [string] $ModuleName,
+
+        [Parameter(Mandatory = $true)]
+        [string] $NewModuleVersion
     )
+
+    # Validate NewModuleVersion
+    Write-Log "Checking for '$ModuleName' version '$NewModuleVersion' in PowerShell Gallery..."
+
+    try {
+        $foundModule = Find-PSResource -Name $ModuleName -Version $NewModuleVersion
+    }
+    catch {
+        Exit-WithError "Module '$ModuleName' with version '$NewModuleVersion' could not be found in the PowerShell Gallery..."
+    }
 
     Write-Log "Getting module '$ModuleName' in automation account '$AutomationAccountName'..."
 
@@ -273,31 +237,20 @@ function Update-ExistingModule {
 
     Write-Log "Checking '$ModuleName' in automation account '$AutomationAccountName' for upgrade..."
 
-    # Get latest version from PowerShell Gallery
-    $moduleUri = "https://www.powershellgallery.com/api/v2/Search()?`$filter=IsLatestVersion&searchTerm=%27$ModuleName%27&targetFramework=%27%27&includePrerelease=false&`$skip=0&`$top=40"
-    $searchResult = Invoke-RestMethod -Method Get -Uri $moduleUri -UseBasicParsing
-    $module = $searchResult | Where-Object { $_.title.InnerText -eq $ModuleName }
-
-    if ($null -eq $module) {
-        Write-Log "Module '$ModuleName' cannot be found in PowerShell Gallery..."
-        return
-    }
-
-    $moduleInformation = (Invoke-RestMethod -Method Get -UseBasicParsing -Uri $module.id)
-    $latestVersion = $moduleInformation.entry.properties.version
-
     # Compare versions
     try {
         $existingVersion = [System.Version]::Parse($automationModule.Version)
-        $moduleVersion = [System.Version]::Parse($latestVersion)
+        $newVersion = [System.Version]::Parse($foundModule.Version)
     }
     catch {
-        Exit-WithError "Invalid version format detected for module '$ModuleName'. ExistingVersion: '$($automationModule.Version)', LatestVersion: '$latestVersion'"
+        Exit-WithError "Invalid version format detected for module '$ModuleName'. ExistingVersion: '$($automationModule.Version)', DesiredVersion: '$ModuleVersion'"
     }
 
-    if ($moduleVersion -gt $existingVersion) {
+    Write-Log "Current version of module '$ModuleName' in automation account '$AutomationAccountName' is '$existingVersion'. Desired version is '$newVersion'..."
+
+    if ($newVersion -gt $existingVersion) {
         # Get the module file
-        $moduleContentUrl = "https://www.powershellgallery.com/api/v2/package/$ModuleName"
+        $moduleContentUrl = "https://www.powershellgallery.com/api/v2/package/$ModuleName/$NewModuleVersion"
         do {
             # PS Core work-around for issue https://github.com/PowerShell/PowerShell/issues/4534
             try {
@@ -308,7 +261,7 @@ function Update-ExistingModule {
             }
         } while ($moduleContentUrl -notlike "*.nupkg")
 
-        Write-Log "Updating module '$ModuleName' in automation account '$AutomationAccountName' from '$($automationModule.Version)' to '$latestVersion'..."
+        Write-Log "Updating module '$ModuleName' in automation account '$AutomationAccountName' from '$existingVersion' to '$newVersion'..."
 
         $parameters = @{
             ResourceGroupName     = $ResourceGroupName
@@ -387,7 +340,8 @@ Write-Log "Located automation account '$AutomationAccountName' in resource group
 Update-ExistingModule `
     -ResourceGroupName $ResourceGroupName `
     -AutomationAccountName $automationAccount.AutomationAccountName `
-    -ModuleName 'ComputerManagementDsc'
+    -ModuleName 'ComputerManagementDsc' `
+    -NewModuleVersion '10.0.0'
 
 Import-Module-Custom `
     -ResourceGroupName $ResourceGroupName `
