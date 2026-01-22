@@ -9,7 +9,7 @@ terraform {
 
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 4.56.0"
+      version = "~> 4.57.0"
     }
 
     cloudinit = {
@@ -24,7 +24,7 @@ terraform {
 
     random = {
       source  = "hashicorp/random"
-      version = "~> 3.7.2"
+      version = "~> 3.8.0"
     }
 
     time = {
