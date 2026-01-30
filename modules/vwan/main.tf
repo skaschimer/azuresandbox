@@ -91,7 +91,7 @@ resource "time_sleep" "wait_for_public_access" {
 #region modules
 module "naming" {
   source  = "Azure/naming/azurerm"
-  version = "~> 0.4.2"
+  version = "~> 0.4.3"
   suffix  = [var.tags["project"], var.tags["environment"]]
 }
 #endregion
