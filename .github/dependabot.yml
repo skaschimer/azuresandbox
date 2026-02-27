@@ -1,0 +1,122 @@
+version: 2
+updates:
+  - package-ecosystem: terraform
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "08:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 20
+
+  - package-ecosystem: terraform
+    directory: "/modules/mssql"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "08:05"
+      timezone: "UTC"
+
+  - package-ecosystem: terraform
+    directory: "/modules/mysql"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "08:06"
+      timezone: "UTC"
+
+  - package-ecosystem: terraform
+    directory: "/modules/vm-jumpbox-linux"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "08:07"
+      timezone: "UTC"
+
+  - package-ecosystem: terraform
+    directory: "/modules/vm-mssql-win"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "08:08"
+      timezone: "UTC"
+
+  - package-ecosystem: terraform
+    directory: "/modules/vnet-app"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "08:09"
+      timezone: "UTC"
+
+  - package-ecosystem: terraform
+    directory: "/modules/vnet-shared"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "08:10"
+      timezone: "UTC"
+
+  - package-ecosystem: terraform
+    directory: "/modules/vwan"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "08:11"
+      timezone: "UTC"
+
+  - package-ecosystem: terraform
+    directory: "/extras/configurations/rg-devops-iac"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "08:12"
+      timezone: "UTC"
+
+  - package-ecosystem: terraform
+    directory: "/extras/configurations/rg-devops-iac/modules/vm-jumpbox-linux"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "08:13"
+      timezone: "UTC"
+
+  - package-ecosystem: terraform
+    directory: "/extras/modules/ai-foundry"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "08:14"
+      timezone: "UTC"
+
+  - package-ecosystem: terraform
+    directory: "/extras/modules/avd"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "08:15"
+      timezone: "UTC"
+
+  - package-ecosystem: terraform
+    directory: "/extras/modules/petstore"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "08:16"
+      timezone: "UTC"
+
+  - package-ecosystem: terraform
+    directory: "/extras/modules/vm-devops-win"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "08:17"
+      timezone: "UTC"
+
+  - package-ecosystem: terraform
+    directory: "/extras/modules/vnet-onprem"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "08:18"
+      timezone: "UTC"
